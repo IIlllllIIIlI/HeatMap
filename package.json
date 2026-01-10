@@ -1,0 +1,17 @@
+{
+  "name": "heat-traffic-map",
+  "version": "1.0.0",
+  "description": "Traffic heatmap visualization using Google Maps",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000"
+  },
+  "keywords": [
+    "traffic",
+    "heatmap",
+    "google-maps",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT"
+}

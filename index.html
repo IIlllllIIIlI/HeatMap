@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heat - Traffic Heatmap Visualization</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Heat</h1>
+            <p class="subtitle">Traffic Visualization Heatmap</p>
+        </header>
+
+        <div class="search-container">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Enter location, postcode, or road name..."
+                autocomplete="off"
+            >
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="controls">
+            <label>
+                <input type="checkbox" id="toggleTraffic" checked>
+                Show Traffic Heatmap
+            </label>
+            <label>
+                <input type="range" id="intensitySlider" min="0.3" max="1" step="0.1" value="0.7">
+                Heatmap Intensity
+            </label>
+        </div>
+    </div>
+
+    <!-- Google Maps API - Replace YOUR_API_KEY with actual key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,visualization"></script>
+    <script src="app.js"></script>
+</body>
+</html>
