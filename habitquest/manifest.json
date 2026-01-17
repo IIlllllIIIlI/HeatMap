@@ -1,0 +1,100 @@
+{
+    "name": "HabitHero - Level Up Your Life",
+    "short_name": "HabitHero",
+    "description": "A gamified habit tracking app. Build habits, earn XP, collect pets, and level up your life!",
+    "start_url": "/habitquest/index.html",
+    "display": "standalone",
+    "background_color": "#0f0f1a",
+    "theme_color": "#6c5ce7",
+    "orientation": "portrait",
+    "scope": "/habitquest/",
+    "icons": [
+        {
+            "src": "assets/icon-72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "assets/screenshot-1.png",
+            "sizes": "1080x1920",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "assets/screenshot-2.png",
+            "sizes": "1080x1920",
+            "type": "image/png",
+            "form_factor": "narrow"
+        }
+    ],
+    "categories": ["games", "productivity", "lifestyle"],
+    "shortcuts": [
+        {
+            "name": "Add Habit",
+            "short_name": "Add",
+            "description": "Create a new habit quest",
+            "url": "/habitquest/index.html?action=add",
+            "icons": [{ "src": "assets/shortcut-add.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "My Pets",
+            "short_name": "Pets",
+            "description": "View your pet collection",
+            "url": "/habitquest/index.html?tab=pets",
+            "icons": [{ "src": "assets/shortcut-pets.png", "sizes": "96x96" }]
+        }
+    ],
+    "related_applications": [
+        {
+            "platform": "play",
+            "url": "https://play.google.com/store/apps/details?id=com.habithero.app",
+            "id": "com.habithero.app"
+        }
+    ],
+    "prefer_related_applications": false
+}

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="HabitHero - Level up your life by building habits! Earn XP, collect pets, and unlock rewards.">
+
+    <title>HabitHero - Level Up Your Life</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="screen active">
+            <div class="splash-content">
+                <div class="splash-logo">🏆</div>
+                <h1 class="splash-title">HabitHero</h1>
+                <p class="splash-tagline">Level Up Your Life</p>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Container -->
+        <div id="main-app" class="hidden">
+            <!-- Top Header Bar -->
+            <header class="top-bar">
+                <div class="player-info">
+                    <div class="avatar-container" id="avatar-display">
+                        <div class="avatar">😊</div>
+                        <div class="level-badge" id="level-badge">1</div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-name" id="player-name">Adventurer</div>
+                        <div class="xp-bar-container">
+                            <div class="xp-bar">
+                                <div class="xp-fill" id="xp-fill"></div>
+                            </div>
+                            <span class="xp-text" id="xp-text">0 / 100 XP</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="currency-display">
+                    <div class="currency gold" id="gold-display">
+                        <span class="currency-icon">🪙</span>
+                        <span class="currency-amount">0</span>
+                    </div>
+                    <div class="currency gems" id="gems-display" onclick="GameState.showGemShop()">
+                        <span class="currency-icon">💎</span>
+                        <span class="currency-amount">0</span>
+                        <span class="add-btn">+</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Active Pet Display -->
+            <div class="active-pet-container" id="active-pet-container">
+                <div class="pet-sprite" id="active-pet-sprite">🐣</div>
+                <div class="pet-name" id="active-pet-name">Pip</div>
+                <div class="pet-mood" id="pet-mood">😊 Happy</div>
+                <div class="pet-xp-bar">
+                    <div class="pet-xp-fill" id="pet-xp-fill"></div>
+                </div>
+            </div>
+
+            <!-- Daily Streak Banner -->
+            <div class="streak-banner" id="streak-banner">
+                <div class="streak-flames">🔥</div>
+                <div class="streak-info">
+                    <span class="streak-count" id="streak-count">0</span>
+                    <span class="streak-label">Day Streak</span>
+                </div>
+                <div class="streak-bonus" id="streak-bonus">+0% XP</div>
+            </div>
+
+            <!-- Main Content Area -->
+            <main class="main-content" id="main-content">
+                <!-- Home Tab -->
+                <section class="tab-content active" id="tab-home">
+                    <div class="section-header">
+                        <h2>Today's Quests</h2>
+                        <div class="date-display" id="date-display"></div>
+                    </div>
+
+                    <div class="daily-progress">
+                        <div class="progress-ring" id="daily-progress-ring">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="progress-bg" cx="50" cy="50" r="45"/>
+                                <circle class="progress-fill" cx="50" cy="50" r="45" id="progress-circle"/>
+                            </svg>
+                            <div class="progress-text">
+                                <span class="progress-count" id="habits-completed">0</span>
+                                <span class="progress-total">/<span id="habits-total">0</span></span>
+                            </div>
+                        </div>
+                        <div class="daily-rewards">
+                            <h4>Daily Bonus</h4>
+                            <div class="reward-preview" id="daily-reward-preview">
+                                Complete all habits for bonus rewards!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="habits-list" id="habits-list">
+                        <!-- Habits will be inserted here -->
+                    </div>
+
+                    <button class="add-habit-btn" id="add-habit-btn" onclick="HabitManager.showAddHabitModal()">
+                        <span>+</span> New Quest
+                    </button>
+                </section>
+
+                <!-- Pets Tab -->
+                <section class="tab-content" id="tab-pets">
+                    <div class="section-header">
+                        <h2>My Companions</h2>
+                        <span class="collection-count" id="pet-collection-count">0/20</span>
+                    </div>
+
+                    <div class="active-pet-detail" id="active-pet-detail">
+                        <div class="pet-showcase">
+                            <div class="pet-large-sprite" id="pet-large-sprite">🐣</div>
+                            <div class="pet-info">
+                                <h3 id="pet-detail-name">Pip</h3>
+                                <div class="pet-level">Level <span id="pet-level">1</span></div>
+                                <div class="pet-evolution-bar">
+                                    <div class="evolution-fill" id="evolution-fill"></div>
+                                </div>
+                                <p class="evolution-hint" id="evolution-hint">Feed more to evolve!</p>
+                            </div>
+                        </div>
+                        <div class="pet-stats">
+                            <div class="stat">
+                                <span class="stat-label">Happiness</span>
+                                <div class="stat-bar"><div class="stat-fill happiness" id="pet-happiness"></div></div>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Energy</span>
+                                <div class="stat-bar"><div class="stat-fill energy" id="pet-energy"></div></div>
+                            </div>
+                        </div>
+                        <button class="feed-pet-btn" onclick="PetManager.feedPet()">
+                            <span>🍎</span> Feed Pet (10 🪙)
+                        </button>
+                    </div>
+
+                    <h3 class="subsection-title">Pet Collection</h3>
+                    <div class="pet-grid" id="pet-grid">
+                        <!-- Pets will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Shop Tab -->
+                <section class="tab-content" id="tab-shop">
+                    <div class="section-header">
+                        <h2>Shop</h2>
+                    </div>
+
+                    <div class="shop-tabs">
+                        <button class="shop-tab active" data-shop="items">Items</button>
+                        <button class="shop-tab" data-shop="pets">Pets</button>
+                        <button class="shop-tab" data-shop="themes">Themes</button>
+                        <button class="shop-tab" data-shop="powerups">Power-Ups</button>
+                    </div>
+
+                    <div class="shop-content" id="shop-items">
+                        <!-- Shop items will be inserted here -->
+                    </div>
+
+                    <div class="shop-section premium-section">
+                        <h3>💎 Gem Store</h3>
+                        <div class="gem-packages" id="gem-packages">
+                            <!-- Gem packages will be inserted here -->
+                        </div>
+                        <button class="watch-ad-btn" onclick="AdManager.watchAd()">
+                            <span>📺</span> Watch Ad for 5 💎
+                            <span class="ad-cooldown" id="ad-cooldown"></span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Achievements Tab -->
+                <section class="tab-content" id="tab-achievements">
+                    <div class="section-header">
+                        <h2>Achievements</h2>
+                        <span class="achievement-points" id="achievement-points">0 ⭐</span>
+                    </div>
+
+                    <div class="battle-pass-preview" onclick="BattlePass.show()">
+                        <div class="bp-info">
+                            <h4>🎖️ Season Pass</h4>
+                            <p>Unlock exclusive rewards!</p>
+                        </div>
+                        <div class="bp-progress">
+                            <div class="bp-level">Tier <span id="bp-tier">1</span></div>
+                            <div class="bp-bar"><div class="bp-fill" id="bp-fill"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="achievements-grid" id="achievements-grid">
+                        <!-- Achievements will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Profile Tab -->
+                <section class="tab-content" id="tab-profile">
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profile-avatar">😊</div>
+                        <h2 id="profile-name">Adventurer</h2>
+                        <p class="profile-title" id="profile-title">Novice Habit Builder</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-total-habits">0</span>
+                            <span class="stat-name">Habits Completed</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-best-streak">0</span>
+                            <span class="stat-name">Best Streak</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-total-xp">0</span>
+                            <span class="stat-name">Total XP Earned</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-pets-owned">0</span>
+                            <span class="stat-name">Pets Collected</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h3>⚙️ Settings</h3>
+                        <div class="settings-list">
+                            <div class="setting-item" onclick="showEditProfile()">
+                                <span>✏️ Edit Profile</span>
+                                <span class="arrow">›</span>
+                            </div>
+                            <div class="setting-item" onclick="toggleNotifications()">
+                                <span>🔔 Notifications</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="notifications-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item" onclick="toggleSound()">
+                                <span>🔊 Sound Effects</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="sound-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item" onclick="showPremium()">
+                                <span>👑 HabitHero Pro</span>
+                                <span class="premium-badge">UPGRADE</span>
+                            </div>
+                            <div class="setting-item" onclick="exportData()">
+                                <span>📤 Export Data</span>
+                                <span class="arrow">›</span>
+                            </div>
+                            <div class="setting-item danger" onclick="resetProgress()">
+                                <span>🗑️ Reset Progress</span>
+                                <span class="arrow">›</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="premium-banner" onclick="showPremium()">
+                        <div class="premium-content">
+                            <h4>👑 Become a HabitHero Pro</h4>
+                            <p>Unlimited habits, exclusive pets, no ads!</p>
+                        </div>
+                        <span class="premium-price">$4.99/mo</span>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-item active" data-tab="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Home</span>
+                </button>
+                <button class="nav-item" data-tab="pets">
+                    <span class="nav-icon">🐾</span>
+                    <span class="nav-label">Pets</span>
+                </button>
+                <button class="nav-item" data-tab="shop">
+                    <span class="nav-icon">🛒</span>
+                    <span class="nav-label">Shop</span>
+                </button>
+                <button class="nav-item" data-tab="achievements">
+                    <span class="nav-icon">🏆</span>
+                    <span class="nav-label">Quests</span>
+                </button>
+                <button class="nav-item" data-tab="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Profile</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Modals -->
+        <!-- Add Habit Modal -->
+        <div class="modal" id="add-habit-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Quest</h3>
+                    <button class="close-btn" onclick="HabitManager.hideAddHabitModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Quest Name</label>
+                        <input type="text" id="habit-name-input" placeholder="e.g., Morning Workout" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <div class="category-select" id="category-select">
+                            <button class="category-btn active" data-category="health">💪 Health</button>
+                            <button class="category-btn" data-category="fitness">🏃 Fitness</button>
+                            <button class="category-btn" data-category="learning">📚 Learning</button>
+                            <button class="category-btn" data-category="mindfulness">🧘 Mindful</button>
+                            <button class="category-btn" data-category="productivity">⚡ Productivity</button>
+                            <button class="category-btn" data-category="social">👥 Social</button>
+                            <button class="category-btn" data-category="creative">🎨 Creative</button>
+                            <button class="category-btn" data-category="finance">💰 Finance</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulty (XP Reward)</label>
+                        <div class="difficulty-select" id="difficulty-select">
+                            <button class="difficulty-btn" data-difficulty="easy" data-xp="10">
+                                <span class="diff-stars">⭐</span>
+                                <span class="diff-label">Easy</span>
+                                <span class="diff-xp">+10 XP</span>
+                            </button>
+                            <button class="difficulty-btn active" data-difficulty="medium" data-xp="25">
+                                <span class="diff-stars">⭐⭐</span>
+                                <span class="diff-label">Medium</span>
+                                <span class="diff-xp">+25 XP</span>
+                            </button>
+                            <button class="difficulty-btn" data-difficulty="hard" data-xp="50">
+                                <span class="diff-stars">⭐⭐⭐</span>
+                                <span class="diff-label">Hard</span>
+                                <span class="diff-xp">+50 XP</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <div class="frequency-select" id="frequency-select">
+                            <button class="freq-btn active" data-freq="daily">Daily</button>
+                            <button class="freq-btn" data-freq="weekdays">Weekdays</button>
+                            <button class="freq-btn" data-freq="weekends">Weekends</button>
+                            <button class="freq-btn" data-freq="custom">Custom</button>
+                        </div>
+                        <div class="custom-days hidden" id="custom-days">
+                            <label class="day-check"><input type="checkbox" data-day="0"><span>S</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="1"><span>M</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="2"><span>T</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="3"><span>W</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="4"><span>T</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="5"><span>F</span></label>
+                            <label class="day-check"><input type="checkbox" data-day="6"><span>S</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reminder Time (Optional)</label>
+                        <input type="time" id="reminder-time-input">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="HabitManager.hideAddHabitModal()">Cancel</button>
+                    <button class="btn-primary" onclick="HabitManager.createHabit()">Create Quest</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Up Modal -->
+        <div class="modal celebration-modal" id="level-up-modal">
+            <div class="modal-content level-up-content">
+                <div class="confetti-container" id="confetti"></div>
+                <div class="level-up-display">
+                    <div class="level-up-text">LEVEL UP!</div>
+                    <div class="new-level" id="new-level-display">2</div>
+                </div>
+                <div class="level-rewards" id="level-rewards">
+                    <h4>Rewards Unlocked!</h4>
+                    <div class="rewards-list" id="level-rewards-list"></div>
+                </div>
+                <button class="btn-primary" onclick="closeModal('level-up-modal')">Awesome!</button>
+            </div>
+        </div>
+
+        <!-- Pet Unlocked Modal -->
+        <div class="modal celebration-modal" id="pet-unlock-modal">
+            <div class="modal-content pet-unlock-content">
+                <div class="sparkle-container"></div>
+                <h3>New Companion!</h3>
+                <div class="new-pet-display" id="new-pet-display">🐱</div>
+                <div class="pet-unlock-name" id="pet-unlock-name">Whiskers</div>
+                <p class="pet-unlock-desc" id="pet-unlock-desc">A curious cat who loves to explore!</p>
+                <button class="btn-primary" onclick="closeModal('pet-unlock-modal')">Welcome!</button>
+            </div>
+        </div>
+
+        <!-- Gem Shop Modal -->
+        <div class="modal" id="gem-shop-modal">
+            <div class="modal-content gem-shop-content">
+                <div class="modal-header">
+                    <h3>💎 Gem Shop</h3>
+                    <button class="close-btn" onclick="closeModal('gem-shop-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="gem-balance">
+                        <span>Your Gems:</span>
+                        <span class="gem-count" id="gem-shop-balance">0 💎</span>
+                    </div>
+                    <div class="gem-packages-grid" id="gem-packages-grid">
+                        <!-- Gem packages inserted by JS -->
+                    </div>
+                    <div class="ad-section">
+                        <h4>Free Gems!</h4>
+                        <button class="watch-ad-btn large" onclick="AdManager.watchAd()">
+                            <span>📺</span> Watch Ad for 5 💎
+                        </button>
+                        <p class="ad-limit" id="ad-limit-text">5 ads remaining today</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Modal -->
+        <div class="modal" id="premium-modal">
+            <div class="modal-content premium-content">
+                <div class="modal-header premium-header">
+                    <h3>👑 HabitHero Pro</h3>
+                    <button class="close-btn" onclick="closeModal('premium-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="premium-features">
+                        <div class="premium-feature">
+                            <span class="feature-icon">♾️</span>
+                            <div>
+                                <h4>Unlimited Habits</h4>
+                                <p>Create as many quests as you want</p>
+                            </div>
+                        </div>
+                        <div class="premium-feature">
+                            <span class="feature-icon">🚫</span>
+                            <div>
+                                <h4>No Ads</h4>
+                                <p>Enjoy an ad-free experience</p>
+                            </div>
+                        </div>
+                        <div class="premium-feature">
+                            <span class="feature-icon">🐲</span>
+                            <div>
+                                <h4>Exclusive Pets</h4>
+                                <p>Unlock legendary companions</p>
+                            </div>
+                        </div>
+                        <div class="premium-feature">
+                            <span class="feature-icon">🎨</span>
+                            <div>
+                                <h4>Premium Themes</h4>
+                                <p>Customize your experience</p>
+                            </div>
+                        </div>
+                        <div class="premium-feature">
+                            <span class="feature-icon">⚡</span>
+                            <div>
+                                <h4>2x XP Boost</h4>
+                                <p>Level up twice as fast</p>
+                            </div>
+                        </div>
+                        <div class="premium-feature">
+                            <span class="feature-icon">📊</span>
+                            <div>
+                                <h4>Advanced Stats</h4>
+                                <p>Detailed analytics & insights</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="premium-pricing">
+                        <div class="price-option" data-plan="monthly">
+                            <span class="plan-name">Monthly</span>
+                            <span class="plan-price">$4.99/mo</span>
+                        </div>
+                        <div class="price-option best-value" data-plan="yearly">
+                            <span class="best-badge">BEST VALUE</span>
+                            <span class="plan-name">Yearly</span>
+                            <span class="plan-price">$29.99/yr</span>
+                            <span class="savings">Save 50%!</span>
+                        </div>
+                        <div class="price-option" data-plan="lifetime">
+                            <span class="plan-name">Lifetime</span>
+                            <span class="plan-price">$79.99</span>
+                            <span class="savings">One-time payment</span>
+                        </div>
+                    </div>
+                    <button class="btn-premium" onclick="Premium.subscribe()">Start 7-Day Free Trial</button>
+                    <p class="premium-note">Cancel anytime. No commitment.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Pass Modal -->
+        <div class="modal" id="battle-pass-modal">
+            <div class="modal-content battle-pass-content">
+                <div class="modal-header bp-header">
+                    <h3>🎖️ Season 1: New Beginnings</h3>
+                    <button class="close-btn" onclick="closeModal('battle-pass-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="bp-timer">
+                        <span>Season ends in:</span>
+                        <span class="bp-countdown" id="bp-countdown">29d 12h 30m</span>
+                    </div>
+                    <div class="bp-tracks" id="bp-tracks">
+                        <!-- Battle pass tracks inserted by JS -->
+                    </div>
+                    <div class="bp-upgrade" id="bp-upgrade-section">
+                        <h4>✨ Upgrade to Premium Pass</h4>
+                        <p>Unlock exclusive rewards on the premium track!</p>
+                        <button class="btn-premium" onclick="BattlePass.upgrade()">
+                            Upgrade for 500 💎
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal" id="edit-profile-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Profile</h3>
+                    <button class="close-btn" onclick="closeModal('edit-profile-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input type="text" id="edit-name-input" placeholder="Your name" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Avatar</label>
+                        <div class="avatar-select" id="avatar-select">
+                            <!-- Avatars inserted by JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeModal('edit-profile-modal')">Cancel</button>
+                    <button class="btn-primary" onclick="saveProfile()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- XP Popup -->
+        <div class="xp-popup" id="xp-popup">
+            <span class="xp-amount">+25 XP</span>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
