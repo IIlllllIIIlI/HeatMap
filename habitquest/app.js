@@ -110,6 +110,12 @@ const GAME_DATA = {
         { id: 'early_bird', name: 'Early Bird', emoji: '🐦', desc: 'Complete a habit before 7 AM', condition: { type: 'early_bird', count: 1 }, points: 15 },
         { id: 'night_owl', name: 'Night Owl', emoji: '🦉', desc: 'Complete a habit after 10 PM', condition: { type: 'night_owl', count: 1 }, points: 15 },
         { id: 'gold_hoarder', name: 'Gold Hoarder', emoji: '🪙', desc: 'Save 5000 gold', condition: { type: 'gold', count: 5000 }, points: 50 },
+
+        // Social achievements
+        { id: 'first_friend', name: 'Social Butterfly', emoji: '🦋', desc: 'Add your first friend', condition: { type: 'friends', count: 1 }, points: 20 },
+        { id: 'friend_5', name: 'Squad Goals', emoji: '👯', desc: 'Have 5 friends', condition: { type: 'friends', count: 5 }, points: 50 },
+        { id: 'friend_10', name: 'Popular', emoji: '🌟', desc: 'Have 10 friends', condition: { type: 'friends', count: 10 }, points: 100 },
+        { id: 'friend_20', name: 'Community Leader', emoji: '👑', desc: 'Have 20 friends', condition: { type: 'friends', count: 20 }, points: 200 },
     ],
 
     // Battle Pass tiers
@@ -126,8 +132,14 @@ const GAME_DATA = {
         { tier: 10, freeReward: { type: 'golden_egg', amount: 1, emoji: '🥚' }, premiumReward: { type: 'exclusive_pet', petId: 'robot', emoji: '🤖' }, xpRequired: 3200 },
     ],
 
-    // Avatars
-    avatars: ['😊', '😎', '🤓', '🥳', '😤', '🧙', '🦸', '🧝', '🧛', '🤠', '👨‍🚀', '👩‍🎤', '🥷', '🧚', '🧜', '🦹'],
+    // Avatars - expanded collection including default person outline (null = default icon)
+    avatars: [
+        null, // Default person outline icon
+        '😊', '😎', '🤓', '🥳', '😤', '🧙', '🦸', '🧝', '🧛', '🤠',
+        '👨‍🚀', '👩‍🎤', '🥷', '🧚', '🧜', '🦹', '🧑‍🎓', '🧑‍💻', '🧑‍🔬', '🧑‍🎨',
+        '🧑‍🚒', '🧑‍✈️', '🧑‍🍳', '👸', '🤴', '🦊', '🐱', '🐶', '🐼', '🦄',
+        '🐉', '🦁', '🐯', '🐸', '🦋', '🌟', '💫', '🔥', '❄️', '🌈'
+    ],
 
     // Player titles based on level
     titles: [
@@ -160,10 +172,15 @@ const GameState = {
 
     // Default state structure
     getDefaultState() {
+        // Generate unique user tag (4 digit number)
+        const userTag = String(Math.floor(1000 + Math.random() * 9000));
+
         return {
             player: {
                 name: 'Adventurer',
-                avatar: '😊',
+                avatar: null, // null = default person outline, or emoji string
+                profilePhoto: null, // base64 encoded custom photo
+                userTag: userTag, // unique 4-digit identifier
                 level: 1,
                 xp: 0,
                 totalXp: 0,
@@ -174,6 +191,7 @@ const GameState = {
                 lastActiveDate: null,
                 createdAt: new Date().toISOString(),
             },
+            friends: [], // array of friend objects { id, name, tag, avatar, level, streak, addedAt }
             habits: [],
             completedToday: [],
             pets: {
@@ -293,8 +311,13 @@ const GameState = {
     addXP(amount) {
         // Apply streak bonus
         const streakBonus = Math.min(this.data.player.streak * 5, 100); // Max 100% bonus
-        const bonusXP = Math.floor(amount * (streakBonus / 100));
-        const totalXP = amount + bonusXP;
+        const streakBonusXP = Math.floor(amount * (streakBonus / 100));
+
+        // Apply friend bonus (5% per friend, max 25%)
+        const friendBonus = Math.min(this.data.friends.length * 5, 25);
+        const friendBonusXP = Math.floor(amount * (friendBonus / 100));
+
+        const totalXP = amount + streakBonusXP + friendBonusXP;
 
         // Apply premium bonus
         const premiumMultiplier = this.data.premium.active ? 2 : 1;
@@ -1203,6 +1226,215 @@ const AdManager = {
     }
 };
 
+// ==================== FRIENDS MANAGER ====================
+
+const FriendsManager = {
+    selectedFriend: null,
+
+    // Get the player's friend code
+    getFriendCode() {
+        const player = GameState.data.player;
+        return `${player.name}#${player.userTag}`;
+    },
+
+    // Show add friend modal
+    showAddFriendModal() {
+        document.getElementById('add-friend-modal').classList.add('active');
+        document.getElementById('modal-friend-code').textContent = this.getFriendCode();
+        document.getElementById('friend-code-input').value = '';
+    },
+
+    // Copy friend code to clipboard
+    copyFriendCode() {
+        const code = this.getFriendCode();
+        navigator.clipboard.writeText(code).then(() => {
+            Toast.show('Friend code copied! 📋', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            Toast.show('Friend code copied! 📋', 'success');
+        });
+    },
+
+    // Share friend code using Web Share API
+    shareCode() {
+        const code = this.getFriendCode();
+        if (navigator.share) {
+            navigator.share({
+                title: 'Add me on HabitHero!',
+                text: `Join me on HabitHero and let's build habits together! My friend code: ${code}`,
+                url: window.location.href
+            }).catch(() => {
+                // Share cancelled or failed
+                this.copyFriendCode();
+            });
+        } else {
+            // Fallback to copy
+            this.copyFriendCode();
+        }
+    },
+
+    // Add a friend by their code
+    addFriend() {
+        const input = document.getElementById('friend-code-input').value.trim();
+
+        // Validate format: Name#1234
+        const codeRegex = /^(.+)#(\d{4})$/;
+        const match = input.match(codeRegex);
+
+        if (!match) {
+            Toast.show('Invalid code format! Use Name#1234', 'error');
+            return;
+        }
+
+        const friendName = match[1];
+        const friendTag = match[2];
+
+        // Check if it's the player's own code
+        if (friendName === GameState.data.player.name && friendTag === GameState.data.player.userTag) {
+            Toast.show("You can't add yourself!", 'warning');
+            return;
+        }
+
+        // Check if already a friend
+        const existingFriend = GameState.data.friends.find(
+            f => f.name === friendName && f.tag === friendTag
+        );
+        if (existingFriend) {
+            Toast.show('Already friends!', 'warning');
+            return;
+        }
+
+        // Check friend limit (max 20 friends for free, 50 for premium)
+        const maxFriends = GameState.data.premium.active ? 50 : 20;
+        if (GameState.data.friends.length >= maxFriends) {
+            Toast.show(`Max ${maxFriends} friends reached!`, 'warning');
+            return;
+        }
+
+        // Add the friend (in a real app, this would verify the code with a server)
+        const newFriend = {
+            id: `${friendName}#${friendTag}`,
+            name: friendName,
+            tag: friendTag,
+            avatar: null, // Will be updated when synced
+            level: Math.floor(Math.random() * 20) + 1, // Demo: random level
+            streak: Math.floor(Math.random() * 30), // Demo: random streak
+            habitsCompleted: Math.floor(Math.random() * 100), // Demo data
+            addedAt: new Date().toISOString(),
+            isOnline: Math.random() > 0.5 // Demo: random online status
+        };
+
+        GameState.data.friends.push(newFriend);
+        GameState.save();
+
+        closeModal('add-friend-modal');
+        this.renderFriendsList();
+        this.updateFriendBonus();
+
+        Toast.show(`${friendName} added as friend! 🎉`, 'success');
+        playSound('achievement');
+
+        // Check for friend-related achievements
+        Achievements.check('friends', GameState.data.friends.length);
+    },
+
+    // Show friend profile modal
+    showFriendProfile(friendId) {
+        const friend = GameState.data.friends.find(f => f.id === friendId);
+        if (!friend) return;
+
+        this.selectedFriend = friend;
+
+        document.getElementById('friend-modal-avatar').textContent = friend.avatar || '👤';
+        document.getElementById('friend-modal-name').textContent = friend.name;
+        document.getElementById('friend-modal-tag').textContent = `#${friend.tag}`;
+        document.getElementById('friend-modal-level').textContent = friend.level;
+        document.getElementById('friend-modal-streak').textContent = friend.streak;
+        document.getElementById('friend-modal-habits').textContent = friend.habitsCompleted || 0;
+
+        document.getElementById('friend-profile-modal').classList.add('active');
+    },
+
+    // Remove selected friend
+    removeFriend() {
+        if (!this.selectedFriend) return;
+
+        if (confirm(`Remove ${this.selectedFriend.name} from friends?`)) {
+            GameState.data.friends = GameState.data.friends.filter(
+                f => f.id !== this.selectedFriend.id
+            );
+            GameState.save();
+
+            closeModal('friend-profile-modal');
+            this.renderFriendsList();
+            this.updateFriendBonus();
+
+            Toast.show('Friend removed', 'success');
+        }
+    },
+
+    // Challenge a friend (demo feature)
+    challengeFriend() {
+        if (!this.selectedFriend) return;
+
+        Toast.show(`Challenge sent to ${this.selectedFriend.name}! ⚔️`, 'success');
+        closeModal('friend-profile-modal');
+    },
+
+    // Render friends list in profile
+    renderFriendsList() {
+        const container = document.getElementById('friends-list');
+        const friends = GameState.data.friends;
+
+        if (friends.length === 0) {
+            container.innerHTML = `
+                <div class="empty-friends">
+                    <span>No friends yet</span>
+                    <p>Add friends to earn bonus XP!</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = friends.map(friend => `
+            <div class="friend-card" onclick="FriendsManager.showFriendProfile('${friend.id}')">
+                <div class="friend-avatar">${friend.avatar || '👤'}</div>
+                <div class="friend-info">
+                    <div class="friend-name">${escapeHtml(friend.name)}</div>
+                    <div class="friend-details">
+                        <span class="friend-level">Lv.${friend.level}</span>
+                        <span class="friend-streak">🔥 ${friend.streak}</span>
+                    </div>
+                </div>
+                <div class="friend-status ${friend.isOnline ? 'online' : 'offline'}"></div>
+            </div>
+        `).join('');
+    },
+
+    // Update friend bonus display
+    updateFriendBonus() {
+        const bonus = Math.min(GameState.data.friends.length * 5, 25);
+        const banner = document.getElementById('social-bonus-banner');
+        const bonusValue = document.getElementById('friend-bonus-value');
+
+        if (bonus > 0) {
+            banner.classList.add('active');
+            bonusValue.textContent = `+${bonus}% XP`;
+        } else {
+            banner.classList.remove('active');
+        }
+
+        // Update friend code display
+        document.getElementById('friend-code-text').textContent = this.getFriendCode();
+    }
+};
+
 // ==================== PREMIUM ====================
 
 const Premium = {
@@ -1241,7 +1473,31 @@ const UI = {
 
         document.getElementById('player-name').textContent = player.name;
         document.getElementById('level-badge').textContent = player.level;
-        document.getElementById('avatar-display').querySelector('.avatar').textContent = player.avatar;
+
+        // Update header avatar/photo
+        const headerAvatar = document.getElementById('header-avatar');
+        const headerPhoto = document.getElementById('header-photo');
+
+        if (player.profilePhoto) {
+            // Show custom photo
+            headerAvatar.style.display = 'none';
+            headerPhoto.src = player.profilePhoto;
+            headerPhoto.style.display = 'block';
+        } else if (player.avatar) {
+            // Show emoji avatar
+            headerAvatar.innerHTML = player.avatar;
+            headerAvatar.style.display = 'flex';
+            headerPhoto.style.display = 'none';
+        } else {
+            // Show default person icon
+            headerAvatar.innerHTML = `
+                <svg class="default-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            `;
+            headerAvatar.style.display = 'flex';
+            headerPhoto.style.display = 'none';
+        }
 
         // Calculate XP progress to next level
         const currentLevelXP = GAME_DATA.levelThresholds[player.level - 1] || 0;
@@ -1255,7 +1511,29 @@ const UI = {
 
         // Update profile tab
         document.getElementById('profile-name').textContent = player.name;
-        document.getElementById('profile-avatar').textContent = player.avatar;
+        document.getElementById('profile-user-tag').textContent = `#${player.userTag}`;
+
+        // Update profile avatar/photo
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profilePhoto = document.getElementById('profile-photo');
+
+        if (player.profilePhoto) {
+            profileAvatar.style.display = 'none';
+            profilePhoto.src = player.profilePhoto;
+            profilePhoto.style.display = 'block';
+        } else if (player.avatar) {
+            profileAvatar.innerHTML = player.avatar;
+            profileAvatar.style.display = 'flex';
+            profilePhoto.style.display = 'none';
+        } else {
+            profileAvatar.innerHTML = `
+                <svg class="default-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            `;
+            profileAvatar.style.display = 'flex';
+            profilePhoto.style.display = 'none';
+        }
 
         // Get title
         const title = GAME_DATA.titles.filter(t => t.minLevel <= player.level).pop();
@@ -1521,25 +1799,137 @@ function purchaseGems(packageId) {
     closeModal('gem-shop-modal');
 }
 
+// Temporary state for profile editing
+let tempProfilePhoto = null;
+
 function showEditProfile() {
     const modal = document.getElementById('edit-profile-modal');
-    document.getElementById('edit-name-input').value = GameState.data.player.name;
+    const player = GameState.data.player;
 
-    // Render avatar options
+    document.getElementById('edit-name-input').value = player.name;
+
+    // Reset temp photo state
+    tempProfilePhoto = player.profilePhoto;
+
+    // Update photo preview
+    updatePhotoPreview();
+
+    // Render avatar options (including default person icon)
     const avatarSelect = document.getElementById('avatar-select');
-    avatarSelect.innerHTML = GAME_DATA.avatars.map(avatar => `
-        <div class="avatar-option ${avatar === GameState.data.player.avatar ? 'selected' : ''}"
-             onclick="selectAvatar('${avatar}')" data-avatar="${avatar}">
-            ${avatar}
-        </div>
-    `).join('');
+    avatarSelect.innerHTML = GAME_DATA.avatars.map((avatar, index) => {
+        const isSelected = avatar === player.avatar && !player.profilePhoto;
+        const displayContent = avatar === null
+            ? `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+               </svg>`
+            : avatar;
+
+        return `
+            <div class="avatar-option ${isSelected ? 'selected' : ''}"
+                 onclick="selectAvatar(${avatar === null ? 'null' : `'${avatar}'`})"
+                 data-avatar="${avatar === null ? '' : avatar}"
+                 data-index="${index}">
+                ${displayContent}
+            </div>
+        `;
+    }).join('');
 
     modal.classList.add('active');
 }
 
+function updatePhotoPreview() {
+    const preview = document.getElementById('current-photo-preview');
+    const removeBtn = document.getElementById('remove-photo-btn');
+
+    if (tempProfilePhoto) {
+        preview.innerHTML = `<img src="${tempProfilePhoto}" alt="Profile">`;
+        removeBtn.style.display = 'block';
+    } else {
+        preview.innerHTML = `
+            <svg class="default-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        `;
+        removeBtn.style.display = 'none';
+    }
+}
+
+function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        Toast.show('Please select an image file', 'error');
+        return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        Toast.show('Image too large! Max 2MB', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        // Create image to resize
+        const img = new Image();
+        img.onload = () => {
+            // Resize to max 200x200 for storage efficiency
+            const canvas = document.createElement('canvas');
+            const maxSize = 200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                }
+            } else {
+                if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            tempProfilePhoto = canvas.toDataURL('image/jpeg', 0.8);
+            updatePhotoPreview();
+
+            // Deselect any avatar when photo is uploaded
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            Toast.show('Photo uploaded!', 'success');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeProfilePhoto() {
+    tempProfilePhoto = null;
+    updatePhotoPreview();
+    document.getElementById('photo-upload-input').value = '';
+    Toast.show('Photo removed', 'success');
+}
+
 function selectAvatar(avatar) {
+    // Clear photo when selecting avatar
+    tempProfilePhoto = null;
+    updatePhotoPreview();
+    document.getElementById('photo-upload-input').value = '';
+
     document.querySelectorAll('.avatar-option').forEach(el => {
-        el.classList.toggle('selected', el.dataset.avatar === avatar);
+        const elAvatar = el.dataset.avatar === '' ? null : el.dataset.avatar;
+        el.classList.toggle('selected', elAvatar === avatar);
     });
 }
 
@@ -1552,13 +1942,23 @@ function saveProfile() {
 
     GameState.data.player.name = name;
 
-    const selectedAvatar = document.querySelector('.avatar-option.selected');
-    if (selectedAvatar) {
-        GameState.data.player.avatar = selectedAvatar.dataset.avatar;
+    // Save photo if uploaded
+    if (tempProfilePhoto) {
+        GameState.data.player.profilePhoto = tempProfilePhoto;
+        GameState.data.player.avatar = null;
+    } else {
+        // Save selected avatar
+        GameState.data.player.profilePhoto = null;
+        const selectedAvatar = document.querySelector('.avatar-option.selected');
+        if (selectedAvatar) {
+            const avatarValue = selectedAvatar.dataset.avatar;
+            GameState.data.player.avatar = avatarValue === '' ? null : avatarValue;
+        }
     }
 
     GameState.save();
     UI.updatePlayerInfo();
+    FriendsManager.updateFriendBonus(); // Update friend code with new name
     closeModal('edit-profile-modal');
     Toast.show('Profile updated!', 'success');
 }
@@ -1737,6 +2137,8 @@ function init() {
     HabitManager.renderHabits();
     UI.updateAll();
     AdManager.updateAdUI();
+    FriendsManager.renderFriendsList();
+    FriendsManager.updateFriendBonus();
 
     // Add SVG gradient for progress ring
     addProgressGradient();
